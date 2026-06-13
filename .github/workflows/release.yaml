@@ -37,12 +37,12 @@ jobs:
             const workflow_id = 'platformio-ci.yaml';
             const ref = process.env.RELEASE_REF;
             const dispatchTime = new Date().toISOString();
-            await github.actions.createWorkflowDispatch({ owner, repo, workflow_id, ref });
+            await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id, ref });
             console.log(`Dispatched ${workflow_id} at ${dispatchTime}`);
             const waitSeconds = 10;
             const maxAttempts = 60; // 最大 10 分待機
             for (let i = 0; i < maxAttempts; i++) {
-              const runs = await github.actions.listWorkflowRuns({ owner, repo, workflow_id, per_page: 10, event: 'workflow_dispatch' });
+              const runs = await github.rest.actions.listWorkflowRuns({ owner, repo, workflow_id, per_page: 10, event: 'workflow_dispatch' });
               const run = runs.data.workflow_runs.find(r => new Date(r.created_at) >= new Date(dispatchTime));
               if (run && run.status === 'completed') {
                 if (run.conclusion === 'success') {
