@@ -1,45 +1,72 @@
 import os
-import sys
-from os.path import join
+import struct
 
 # PlatformIOの環境変数を取得
 Import("env")
 
-# 変換に必要な uf2conv.py をPythonの内部ツール等からインポート、
-# またはPlatformIOコアが持つユーティリティを利用する設定
-def bin_to_uf2(source, target, env):
-    # 生成された firmware.bin のパスを取得
-    bin_path = str(source[0])
-    # 出力する firmware.uf2 のパス
+# UF2フォーマットの標準マジックナンバー
+UF2_MAGIC_START0 = 0x0A324655
+UF2_MAGIC_START1 = 0x9E5D5157
+UF2_MAGIC_END    = 0x0AB41357
+
+def bin_to_uf2(target, source, env):
+    # SConsの仕様に合わせ、target[0] から生成された .bin のパスを取得
+    bin_path = str(target[0])
     uf2_path = os.path.splitext(bin_path)[0] + ".uf2"
 
     print(f"\n--- Converting BIN to UF2 ---")
     print(f"Source: {bin_path}")
     print(f"Target: {uf2_path}")
 
-    # ⚠️ ここで、お使いのUF2ブートローダーの「開始アドレス」を指定してください。
-    # CH32V203の通常のFlash開始アドレスは 0x08000000 です。
-    # （独自のブートローダー領域を避ける場合は 0x08002000 等に変更してください）
-    base_address = "0x08000000"
-    
-    # 互換性のあるファミリーID（独自のブートローダーに合わせて変更可能。未指定は 0x00000000 扱い）
-    family_id = "0x00000000" 
+    # ⚠️ お使いのUF2ブートローダーの仕様に合わせて設定してください
+    # 通常のFlash開始アドレスは 0x08000000 です。
+    # ブートローダーが自身を避けるためにオフセットを要求する場合は、0x08002000 等に変更してください。
+    BASE_ADDRESS = 0x08000000  
+    FAMILY_ID = 0x00000000     # 特定のファミリーID検証が必要な場合はその値を指定（不要なら0）
 
-    # PlatformIOの内部Python環境から uf2conv を呼び出す
     try:
-        from platformio.util import get_core_package_dir
-        # uf2convのロジックを実行（一般的なスクリプトを内包、またはコマンドライン実行）
-        # ここでは簡単のため、platformioが内部に持つ、または別途用意するuf2convを実行
-        cmd = f'"{sys.executable}" -m platformio system info > /dev/null' # ダミーチェック用
-        
-        # 実際には、手軽にPythonでUF2ブロック（512バイト）を作る簡易コンバータを走らせるのが一番確実です。
-        # ここでは、標準的な uf2conv.py のロジックを模したコマンド、または同梱スクリプトを呼び出します。
-        # ※もしプロジェクト内に uf2conv.py を置くなら以下で一発です：
-        # env.Execute(f'"{sys.executable}" uf2conv.py -b {base_address} -c -o "{uf2_path}" "{bin_path}"')
-        
-        print("UF2 generation successfully completed.")
-    except Exception as e:
-        print(f"Error generating UF2: {e}")
+        with open(bin_path, "rb") as f:
+            bin_data = f.read()
 
-# firmware.bin が生成されたらこの関数を呼び出すように登録
+        # 1ブロックあたり256バイトのデータを入れる
+        num_blocks = (len(bin_data) + 255) // 256
+
+        with open(uf2_path, "wb") as f:
+            for block_no in range(num_blocks):
+                addr = BASE_ADDRESS + (block_no * 256)
+                data = bin_data[block_no * 256 : (block_no + 1) * 256]
+                
+                # 256バイトに満たない最終ブロックを0埋め
+                if len(data) < 256:
+                    data = data.ljust(256, b"\x00")
+
+                flags = 0x00002000 if FAMILY_ID != 0 else 0x00000000
+
+                # UF2ヘッダー (32バイト)
+                header = struct.pack(
+                    "<IIIIIIII",
+                    UF2_MAGIC_START0,
+                    UF2_MAGIC_START1,
+                    flags,
+                    addr,
+                    256,          # ペイロードサイズ
+                    block_no,
+                    num_blocks,
+                    FAMILY_ID     # familyID / fileSize
+                )
+
+                # UF2フッター (4バイト)
+                footer = struct.pack("<I", UF2_MAGIC_END)
+                
+                # 残りのパディング (512 - 32 - 256 - 4 = 220バイト)
+                padding = b"\x00" * 220
+
+                # 512バイトのUF2ブロックを書き込み
+                f.write(header + data + padding + footer)
+
+        print("UF2 generation successfully completed.\n")
+    except Exception as e:
+        print(f"Error generating UF2: {e}\n")
+
+# firmware.bin の生成が成功した直後に実行
 env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", bin_to_uf2)
