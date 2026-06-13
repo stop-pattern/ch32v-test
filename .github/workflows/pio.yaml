@@ -1,6 +1,12 @@
 name: PlatformIO CI
 
-on: [push]
+on:
+  push:
+    paths:
+      - '.github/workflows/**'
+      - 'src/**'
+      - 'test/**'
+      - 'platformio.ini'
 
 jobs:
   build:
