@@ -51,3 +51,4 @@ jobs:
             .pio/build/**/firmware.hex
             .pio/build/**/firmware.elf
             .pio/build/**/firmware.uf2
+          retention-days: 1
