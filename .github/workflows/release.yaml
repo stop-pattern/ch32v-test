@@ -31,6 +31,15 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
+      # タグの作成とプッシュ（手動トリガーの場合のみ）
+      - name: Create and Push Git Tag (Manual Only)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag ${{ env.RELEASE_TAG }}
+          git push origin ${{ env.RELEASE_TAG }}
+
       - name: Download Artifact from CI
         uses: dawidd6/action-download-artifact@v3
         with:
