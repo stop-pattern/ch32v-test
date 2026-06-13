@@ -21,6 +21,9 @@ void example_task(void *pvParameters)
 /// @return 常に0を返す
 int main(void)
 {
+    // 割り込みの優先順位グループをNVIC_PriorityGroup_1に設定
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+
     // システムクロックの更新
     SystemCoreClockUpdate();
 
