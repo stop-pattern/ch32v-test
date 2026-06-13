@@ -66,10 +66,10 @@ def bin_to_uf2(target, source, env):
                 f.write(header + data + padding + footer)
 
         print("UF2 generation successfully completed.\n")
-        print("Error: invalid configuration", file=sys.stderr)  # エラーの例
-        sys.exit(1)
+        sys.exit(0)
+
     except Exception as e:
-        print(f"Error generating UF2: {e}\n")
+        print(f"Error generating UF2: {e}\n", file=sys.stderr)
         sys.exit(1)
 
 # firmware.bin の生成が成功した直後に実行
