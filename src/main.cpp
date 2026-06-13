@@ -1,9 +1,13 @@
 #include "debug.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "ch32v20x_can.h"
+#include "can.hpp"
 
-// タスクハンドルの宣言
+/// @brief exampleタスクのハンドル
 TaskHandle_t example_task_handle;
+/// @brief CANタスクのハンドル
+TaskHandle_t can_task_handle;
 
 /// @brief タスク関数
 /// @param pvParameters タスクに渡されるパラメータ（今回は使用しない）
@@ -15,6 +19,7 @@ void example_task(void *pvParameters)
         printf("Hello FreeRTOS!\n");
         vTaskDelay(250);
     }
+    vTaskDelete(NULL); // タスクを削除（このコードには到達しない）
 }
 
 /// @brief メイン関数
@@ -33,13 +38,21 @@ int main(void)
     // USARTの初期化
     USART_Printf_Init(115200);
 
-    // タスクの作成
+    // exampleタスクの作成
     xTaskCreate((TaskFunction_t)example_task,
         (const char *)"example",
         (uint16_t)256,
         (void *)NULL,
         (UBaseType_t)5,
         (TaskHandle_t *)&example_task_handle);
+    
+    // CANタスクの作成
+    xTaskCreate((TaskFunction_t)can_task,
+        (const char *)"can",
+        (uint16_t)256,
+        (void *)NULL,
+        (UBaseType_t)4,
+        (TaskHandle_t *)&can_task_handle);
 
     // スケジューラの開始
     vTaskStartScheduler();
