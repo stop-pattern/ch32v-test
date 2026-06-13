@@ -16,7 +16,12 @@ permissions:
   contents: write
 
 jobs:
+  # 🛠️ ジョブ1: ワークフローAを「引用」してビルドを実行する
+  run-build:
+    uses: ./.github/workflows/platformio-ci.yaml
+
   release:
+    needs: run-build
     runs-on: ubuntu-latest
     env:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
