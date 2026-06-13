@@ -40,14 +40,14 @@ jobs:
           git push origin ${{ env.RELEASE_TAG }}
 
       - name: Download Artifact from CI
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ github.event.repository.name }}-firmware
           path: artifacts
 
       # Draft Releaseを作成してファイルを添付
       - name: Create Draft Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           name: Release ${{ env.RELEASE_TAG }}
