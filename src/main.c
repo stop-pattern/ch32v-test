@@ -14,7 +14,6 @@ void example_task(void *pvParameters)
 
 int main(void)
 {
-    temp;   // for debug
     SystemCoreClockUpdate();
     Delay_Init();
     USART_Printf_Init(115200);
