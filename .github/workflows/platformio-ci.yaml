@@ -63,6 +63,7 @@ jobs:
   # 🔍 2. 静的コード解析ジョブ
   check:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
@@ -79,7 +80,6 @@ jobs:
             ~/.cache/pip
             ~/.platformio/.cache
             ~/.platformio/packages
-          # platformio.iniの内容が変わったらキャッシュを再作成する
           key: ${{ runner.os }}-check-${{ hashFiles('platformio.ini') }}
           restore-keys: |
             ${{ runner.os }}-check-
@@ -93,6 +93,7 @@ jobs:
   # 🧪 3. ユニットテストジョブ
   test:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
@@ -109,7 +110,6 @@ jobs:
             ~/.cache/pip
             ~/.platformio/.cache
             ~/.platformio/packages
-          # platformio.iniの内容が変わったらキャッシュを再作成する
           key: ${{ runner.os }}-test-${{ hashFiles('platformio.ini') }}
           restore-keys: |
             ${{ runner.os }}-test-
@@ -118,5 +118,4 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Run Unit Tests
-        # ※CI環境（Ubuntu）上で動かすため、後述の注意点を参照してください
         run: pio test -e native
