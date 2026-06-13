@@ -1,4 +1,5 @@
 import os
+import sys
 import struct
 
 # PlatformIOの環境変数を取得
@@ -65,6 +66,7 @@ def bin_to_uf2(target, source, env):
                 f.write(header + data + padding + footer)
 
         print("UF2 generation successfully completed.\n")
+        print("Error: invalid configuration", file=sys.stderr)  # エラーの例
     except Exception as e:
         print(f"Error generating UF2: {e}\n")
 
