@@ -10,6 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
+  # 🛠️ 1. ビルドジョブ
   build:
     runs-on: ubuntu-latest
 
@@ -40,6 +41,7 @@ jobs:
       - name: Build PlatformIO Project
         run: pio run
 
+      # 成果物を保存
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -51,3 +53,40 @@ jobs:
             .pio/build/**/*.lst
             .pio/build/**/*.uf2
           retention-days: 7
+
+  # 🔍 2. 静的コード解析ジョブ
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Run Static Code Analysis
+        run: pio check --skip-packages
+
+  # 🧪 3. ユニットテストジョブ
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Run Unit Tests
+        # ※CI環境（Ubuntu）上で動かすため、後述の注意点を参照してください
+        run: pio test -e native
