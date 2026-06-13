@@ -9,6 +9,11 @@ on:
       - 'platformio.ini'
   workflow_dispatch:
 
+concurrency:
+  # 同一ブランチで同じワークフローが複数走らないようにする
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # 🛠️ 1. ビルドジョブ
   build:
