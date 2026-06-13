@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
-      RELEASE_REF: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
+      CI_REF: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || github.ref_name }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
@@ -35,7 +35,7 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const workflow_id = 'platformio-ci.yaml';
-            const ref = process.env.RELEASE_REF;
+            const ref = process.env.CI_REF;
             const dispatchTime = new Date().toISOString();
             await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id, ref });
             console.log(`Dispatched ${workflow_id} at ${dispatchTime}`);
