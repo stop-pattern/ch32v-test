@@ -67,8 +67,10 @@ def bin_to_uf2(target, source, env):
 
         print("UF2 generation successfully completed.\n")
         print("Error: invalid configuration", file=sys.stderr)  # エラーの例
+        sys.exit(1)
     except Exception as e:
         print(f"Error generating UF2: {e}\n")
+        sys.exit(1)
 
 # firmware.bin の生成が成功した直後に実行
 env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", bin_to_uf2)
