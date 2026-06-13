@@ -59,8 +59,13 @@ jobs:
   release:
     needs: [run-build, prepare-tag]
     runs-on: ubuntu-latest
+    if: |
+      always() &&
+      (needs.run-build.result == 'success') &&
+      (needs.prepare-tag.result == 'success' || needs.prepare-tag.result == 'skipped')
     env:
       RELEASE_TAG: ${{ github.ref_name }}
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
