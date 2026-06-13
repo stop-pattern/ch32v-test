@@ -26,7 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
-      CI_REF: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || github.ref_name }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
