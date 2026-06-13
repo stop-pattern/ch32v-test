@@ -45,8 +45,9 @@ jobs:
         with:
           name: ch32v203-firmware
           path: |
-            .pio/build/**/firmware.bin
-            .pio/build/**/firmware.hex
-            .pio/build/**/firmware.elf
-            .pio/build/**/firmware.uf2
+            .pio/build/**/*.bin
+            .pio/build/**/*.elf
+            .pio/build/**/*.map
+            .pio/build/**/*.lst
+            .pio/build/**/*.uf2
           retention-days: 1
