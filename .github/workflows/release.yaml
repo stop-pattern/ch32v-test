@@ -57,7 +57,7 @@ jobs:
 
   # 🏷️ ジョブ3: ビルドが成功したらDraft Releaseを作成する
   release:
-    needs: run-build
+    needs: [run-build, prepare-tag]
     runs-on: ubuntu-latest
     env:
       RELEASE_TAG: ${{ github.ref_name }}
