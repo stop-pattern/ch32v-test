@@ -1,4 +1,4 @@
-name: PlatformIO CI
+name: PlatformIO CI — Build / Check / Test
 
 on:
   push:
