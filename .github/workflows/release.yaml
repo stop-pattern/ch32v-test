@@ -1,0 +1,41 @@
+name: Create Draft Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for the release (e.g. v1.0.0)'
+        required: true
+        default: 'v0.1.0'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      # 他のワークフロー（PlatformIO CI）の最新の成功ランから成果物をダウンロード
+      - name: Download Artifact from CI
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: pio.yaml
+          workflow_conclusion: success
+          name: ${{ github.event.repository.name }}-firmware
+          path: artifacts
+
+      # Draft Releaseを作成してファイルを添付
+      - name: Create Draft Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag_name }}
+          name: Release ${{ github.event.inputs.tag_name }}
+          draft: true
+          prerelease: false
+          files: |
+            .pio/build/**/*.bin
+            .pio/build/**/*.elf
+            .pio/build/**/*.map
+            .pio/build/**/*.lst
+            .pio/build/**/*.uf2
