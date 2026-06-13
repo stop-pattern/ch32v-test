@@ -1,4 +1,4 @@
-name: Create Draft Release
+﻿name: Create Draft Release
 
 on:
   push:
@@ -15,29 +15,55 @@ permissions:
   actions: write
   contents: write
 
-jobs:
-  # 🛠️ ジョブ1: 別のワークフローを「引用」してビルドを実行する
-  run-build:
-    uses: ./.github/workflows/platformio-ci.yaml
+concurrency:
+  # 同じタグに対する手動実行と tag push の二重実行をまとめる
+  group: ${{ github.workflow }}-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
+  cancel-in-progress: true
 
-  # 🏷️ ジョブ2: ビルドが成功したらDraft Releaseを作成する
-  release:
-    needs: run-build
+jobs:
+  # 🛠️ ジョブ1: 手動実行ではタグだけを作成する
+  prepare-tag:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    env:
-      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
-      # タグの作成とプッシュ（手動トリガーの場合のみ）
-      - name: Create and Push Git Tag (Manual Only)
-        if: github.event_name == 'workflow_dispatch'
+      # 既存タグと衝突すると失敗するので、先に明示的に弾く
+      - name: Validate Tag Input
+        run: |
+          TAG_NAME='${{ github.event.inputs.tag_name }}'
+          if [[ "$TAG_NAME" != v* ]]; then
+            echo "Tag name must start with 'v' so the tag push trigger can pick it up."
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG_NAME" > /dev/null 2>&1; then
+            echo "Tag '$TAG_NAME' already exists."
+            exit 1
+          fi
+
+      # 手動実行ではタグだけ作成し、実際の Release は tag push 側に任せる
+      - name: Create and Push Git Tag
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag ${{ env.RELEASE_TAG }}
-          git push origin ${{ env.RELEASE_TAG }}
+          git tag "${{ github.event.inputs.tag_name }}"
+          git push origin "refs/tags/${{ github.event.inputs.tag_name }}"
+
+  # 🛠️ ジョブ2: どちらの条件でもビルドを実行する
+  run-build:
+    uses: ./.github/workflows/platformio-ci.yaml
+
+  # 🏷️ ジョブ3: ビルドが成功したらDraft Releaseを作成する
+  release:
+    needs: run-build
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.ref_name }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
 
       - name: Download Artifact from CI
         uses: actions/download-artifact@v8
