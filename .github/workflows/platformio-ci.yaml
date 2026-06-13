@@ -37,9 +37,9 @@ jobs:
             ~/.platformio/.cache
             ~/.platformio/packages
           # platformio.iniの内容が変わったらキャッシュを再作成する
-          key: ${{ runner.os }}-pio-${{ hashFiles('platformio.ini') }}
+          key: ${{ runner.os }}-build-${{ hashFiles('platformio.ini') }}
           restore-keys: |
-            ${{ runner.os }}-pio-
+            ${{ runner.os }}-build-
 
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
@@ -72,6 +72,18 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Cache PlatformIO Core
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+            ~/.platformio/packages
+          # platformio.iniの内容が変わったらキャッシュを再作成する
+          key: ${{ runner.os }}-check-${{ hashFiles('platformio.ini') }}
+          restore-keys: |
+            ${{ runner.os }}-check-
+
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
 
@@ -89,6 +101,18 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'
+          
+      - name: Cache PlatformIO Core
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+            ~/.platformio/packages
+          # platformio.iniの内容が変わったらキャッシュを再作成する
+          key: ${{ runner.os }}-test-${{ hashFiles('platformio.ini') }}
+          restore-keys: |
+            ${{ runner.os }}-test-
 
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
