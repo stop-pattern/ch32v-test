@@ -50,4 +50,4 @@ jobs:
             .pio/build/**/*.map
             .pio/build/**/*.lst
             .pio/build/**/*.uf2
-          retention-days: 1
+          retention-days: 7
