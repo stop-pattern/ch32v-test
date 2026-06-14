@@ -2,6 +2,8 @@ name: PlatformIO CI — Build / Check / Test
 
 on:
   push:
+    branches:
+      - '**'
     paths:
       - '.github/workflows/**'
       - 'src/**'
