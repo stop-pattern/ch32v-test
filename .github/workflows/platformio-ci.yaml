@@ -1,0 +1,123 @@
+name: PlatformIO CI — Build / Check / Test
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - '.github/workflows/**'
+      - 'src/**'
+      - 'test/**'
+      - 'platformio.ini'
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  # 同一ブランチで同じワークフローが複数走らないようにする
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 🛠️ 1. ビルドジョブ
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Cache PlatformIO Core
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+            ~/.platformio/packages
+          # platformio.iniの内容が変わったらキャッシュを再作成する
+          key: ${{ runner.os }}-build-${{ hashFiles('platformio.ini') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Build PlatformIO Project
+        run: pio run
+
+      # 成果物を保存
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ github.event.repository.name }}-firmware
+          path: |
+            .pio/build/**/*.bin
+            .pio/build/**/*.elf
+            .pio/build/**/*.map
+            .pio/build/**/*.lst
+            .pio/build/**/*.uf2
+          retention-days: 7
+
+  # 🔍 2. 静的コード解析ジョブ
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Cache PlatformIO Core
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+            ~/.platformio/packages
+          key: ${{ runner.os }}-check-${{ hashFiles('platformio.ini') }}
+          restore-keys: |
+            ${{ runner.os }}-check-
+
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Run Static Code Analysis
+        run: pio check --skip-packages
+
+  # 🧪 3. ユニットテストジョブ
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          
+      - name: Cache PlatformIO Core
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+            ~/.platformio/packages
+          key: ${{ runner.os }}-test-${{ hashFiles('platformio.ini') }}
+          restore-keys: |
+            ${{ runner.os }}-test-
+
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Run Unit Tests
+        run: pio test -e native
