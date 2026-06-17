@@ -50,3 +50,19 @@ void UsartManager::init(uint32_t baudrate) {
     // USART1 有効化
     USART_Cmd(USART1, ENABLE);
 }
+
+void UsartManager::sendString(const char* str) {
+    // 引数チェック
+    if (txMutex == nullptr || str == nullptr) return;
+
+    // ミューテックスを取得して送信権を確保
+    if (xSemaphoreTake(txMutex, portMAX_DELAY) == pdTRUE) {
+        while (*str) {
+            USART_SendData(USART1, static_cast<uint8_t>(*str));
+            while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
+            str++;
+        }
+        // ミューテックスを解放
+        xSemaphoreGive(txMutex);
+    }
+}
