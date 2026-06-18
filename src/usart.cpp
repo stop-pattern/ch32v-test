@@ -66,3 +66,71 @@ void UsartManager::sendString(const char* str) {
         xSemaphoreGive(txMutex);
     }
 }
+
+// 割り込み内からデータをキューへ送る処理
+void UsartManager::handleRxFromISR() {
+    // 割り込み内でのタスク切り替えを考慮して、必要に応じてコンテキストスイッチを要求するためのフラグ
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    // 受信割り込みが発生した場合の処理
+    if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
+        // 受信データを読み取る
+        uint8_t data = static_cast<uint8_t>(USART_ReceiveData(USART1));
+        // キューにデータを送信
+        if (rxQueue != nullptr) {
+            xQueueSendFromISR(rxQueue, &data, &xHigherPriorityTaskWoken);
+        }
+    }
+
+    // 必要に応じてコンテキストスイッチを要求
+    portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
+}
+
+/// @brief USART1の割り込みハンドラ
+/// @note C言語の割り込みハンドラからC++のメソッドを呼び出すためのラッパー関数
+extern "C" void USART1_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+void USART1_IRQHandler(void) {
+    // グローバルインスタンス経由でC++のメソッドを呼び出す
+    g_Usart.handleRxFromISR();
+}
+
+/// @brief 受信タスクのメインループ
+/// @note 内部で呼び出す
+void UsartManager::rxTaskLoop() {
+    uint8_t rxBuffer[RxBufferSize];
+    uint16_t rxIndex = 0;
+    uint8_t receivedChar;
+
+    while (true) {
+        if (xQueueReceive(rxQueue, &receivedChar, portMAX_DELAY) == pdTRUE) {
+            if (receivedChar == '\n' || receivedChar == '\r') {
+                if (rxIndex > 0) {
+                    rxBuffer[rxIndex] = '\0';
+                    
+                    // エコーバック処理（グローバル送信メソッドの呼び出し）
+                    sendString("Echo: ");
+                    sendString(reinterpret_cast<char*>(rxBuffer));
+                    sendString("\r\n");
+                    
+                    rxIndex = 0;
+                }
+            } else {
+                if (rxIndex < (RxBufferSize - 1)) {
+                    rxBuffer[rxIndex++] = receivedChar;
+                } else {
+                    rxIndex = 0;
+                }
+            }
+        }
+    }
+}
+
+/// @brief 受信タスクのラッパー関数
+/// @param pvParameters タスクに渡されるパラメータ（UsartManagerのインスタンスポインタ）
+extern "C" void vRxTaskWrapper(void* pvParameters) {
+    // 渡されたインスタンスポインタを使ってループを実行
+    static_cast<UsartManager*>(pvParameters)->rxTaskLoop();
+}
+
+// グローバルインスタンスの初期化
+UsartManager g_Usart;
