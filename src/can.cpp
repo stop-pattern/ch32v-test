@@ -23,6 +23,12 @@ void canInit() {
     CAN_Init(CAN1, &CAN_InitStructure);
 }
 
+/// @copydoc canSendMessage(uint32_t, const std::array<uint8_t, 8>&)
+uint8_t canSendMessage(uint32_t id, const std::array<uint8_t, 8> &sendData) {
+    bool isExtended = (id > 0x7FF); // 標準IDか拡張IDかを判定
+    return canSendMessage(id, sendData, isExtended);
+}
+
 /// @copydoc canSendMessage(uint32_t, const std::array<uint8_t, 8>&, bool)
 uint8_t canSendMessage(uint32_t id, const std::array<uint8_t, 8> &sendData, bool isExtended) {
     // データ長が8バイトを超える場合は送信失敗

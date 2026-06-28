@@ -8,6 +8,13 @@ TaskHandle_t can_task_handle;
 /// @brief CANメッセージを送信する関数
 /// @param id 送信するCAN ID
 /// @param sendData 送信するデータ
+/// @return 0: 送信成功, -1: 送信失敗
+/// @note CAN IDが標準IDか拡張IDかは、idの値によって判定されます。
+uint8_t canSendMessage(uint32_t id, const std::array<uint8_t, 8> &sendData);
+
+/// @brief CANメッセージを送信する関数
+/// @param id 送信するCAN ID
+/// @param sendData 送信するデータ
 /// @param isExtended 拡張IDを使用するかどうか（デフォルトはfalse）
 /// @return 0: 送信成功, -1: 送信失敗
 uint8_t canSendMessage(uint32_t id, const std::array<uint8_t, 8> &sendData, bool isExtended = false);
